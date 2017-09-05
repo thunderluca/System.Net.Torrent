@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Net.Torrent.Standard", "System.Net.Torrent.Standard.csproj", "{E9CD8D50-9264-4D49-BD95-99C5029AC958}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Net.Torrent", "System.Net.Torrent.csproj", "{E9CD8D50-9264-4D49-BD95-99C5029AC958}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
