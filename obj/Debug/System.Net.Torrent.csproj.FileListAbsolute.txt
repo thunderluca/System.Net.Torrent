@@ -1,0 +1,6 @@
+D:\Source\Repos\System.Net.Torrent\obj\Debug\System.Net.Torrent.csprojResolveAssemblyReference.cache
+D:\Source\Repos\System.Net.Torrent\obj\Debug\System.Net.Torrent.csproj.CoreCompileInputs.cache
+D:\Source\Repos\System.Net.Torrent\bin\Debug\System.Net.Torrent.dll
+D:\Source\Repos\System.Net.Torrent\bin\Debug\System.Net.Torrent.pdb
+D:\Source\Repos\System.Net.Torrent\obj\Debug\System.Net.Torrent.dll
+D:\Source\Repos\System.Net.Torrent\obj\Debug\System.Net.Torrent.pdb
