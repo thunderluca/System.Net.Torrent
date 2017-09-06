@@ -44,16 +44,17 @@ namespace System.Net.Torrent.Extensions
         private byte[] _metadataBuffer;
         private ExtendedProtocolExtensions _parent;
 
-        public string Protocol
-        {
-            get { return "ut_metadata"; }
-        }
+        private const string METADATA_SIZE_KEY = "metadata_size";
+        private const string MESSAGE_TYPE_KEY = "msg_type";
+        private const string PIECE_KEY = "piece";
+
+        public string Protocol => "ut_metadata";
 
         public event Action<IPeerWireClient, IBTExtension, BDict> MetaDataReceived;
 
         public void Init(ExtendedProtocolExtensions parent)
         {
-            _parent = parent;
+            _parent = parent ?? throw new ArgumentNullException(nameof(parent));
             _metadataBuffer = new byte[0];
         }
 
@@ -64,10 +65,10 @@ namespace System.Net.Torrent.Extensions
 
         public void OnHandshake(IPeerWireClient peerWireClient, byte[] handshake)
         {
-            BDict dict = (BDict)BencodingUtils.Decode(handshake);
-            if (dict.ContainsKey("metadata_size"))
+            var dict = (BDict)BencodingUtils.Decode(handshake);
+            if (dict.ContainsKey(METADATA_SIZE_KEY))
             {
-                BInt size = (BInt)dict["metadata_size"];
+                var size = (BInt)dict[METADATA_SIZE_KEY];
                 _metadataSize = size;
                 _pieceCount = (Int64)Math.Ceiling((double)_metadataSize / 16384);
             }
@@ -88,30 +89,27 @@ namespace System.Net.Torrent.Extensions
 
             if (_pieceCount == _piecesReceived)
             {
-                BDict metadata = (BDict)BencodingUtils.Decode(_metadataBuffer);
+                var metadata = (BDict)BencodingUtils.Decode(_metadataBuffer);
 
-                if (MetaDataReceived != null)
-                {
-                    MetaDataReceived(peerWireClient, this, metadata);
-                }
+                MetaDataReceived?.Invoke(peerWireClient, this, metadata);
             }
         }
 
         public void RequestMetaData(IPeerWireClient peerWireClient)
         {
-            byte[] sendBuffer = new byte[0];
+            var sendBuffer = new byte[0];
 
             for (Int32 i = 0; i < _pieceCount; i++)
             {
-                BDict masterBDict = new BDict
+                var masterBDict = new BDict
                 {
-                    {"msg_type", (BInt) 0}, 
-                    {"piece", (BInt) i}
+                    { MESSAGE_TYPE_KEY, (BInt) 0 }, 
+                    { PIECE_KEY, (BInt) i }
                 };
 
-                String encoded = BencodingUtils.EncodeString(masterBDict);
+                var encoded = BencodingUtils.EncodeString(masterBDict);
 
-                byte[] buffer = Pack.Int32(2 + encoded.Length, Pack.Endianness.Big);
+                var buffer = Pack.Int32(2 + encoded.Length, Pack.Endianness.Big);
                 buffer = buffer.Concat(new byte[] {20}).ToArray();
                 buffer = buffer.Concat(new[] { _parent.GetOutgoingMessageID(peerWireClient, this) }).ToArray();
                 buffer = buffer.Concat(Encoding.GetEncoding(1252).GetBytes(encoded)).ToArray();

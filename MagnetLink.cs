@@ -41,38 +41,32 @@ namespace System.Net.Torrent
             Trackers = new Collection<string>();
         }
 
-        public String Name { get; set; }
+        public string Name { get; set; }
         public byte[] Hash { get; set; }
 
-        public String HashString
+        public string HashString
         {
             get { return Unpack.Hex(Hash); }
             set { Hash = Pack.Hex(value); }
         }
 
-        public ICollection<String> Trackers { get; set; }
+        public ICollection<string> Trackers { get; set; }
 
-        public static MagnetLink Resolve(String magnetLink)
+        public static MagnetLink Resolve(string magnetLink)
         {
-            IEnumerable<KeyValuePair<String, String>> values = null;
-
-            if (IsMagnetLink(magnetLink))
-            {
-                values = SplitURLIntoParts(magnetLink.Substring(8));
-            }
+            var values = IsMagnetLink(magnetLink) 
+                ? SplitURLIntoParts(magnetLink.Substring(8)) 
+                : null;
 
             if (values == null) return null;
 
-            MagnetLink magnet = new MagnetLink();
+            var magnet = new MagnetLink();
 
-            foreach (KeyValuePair<string, string> pair in values)
+            foreach (var pair in values)
             {
                 if (pair.Key == "xt")
                 {
-                    if (!IsXTValidHash(pair.Value))
-                    {
-                        continue;
-                    }
+                    if (!IsXTValidHash(pair.Value)) continue;
 
                     magnet.HashString = pair.Value.Substring(9);
                 }
@@ -91,29 +85,29 @@ namespace System.Net.Torrent
             return magnet;
         }
 
-        public static Metadata ResolveToMetadata(String magnetLink)
+        public static Metadata ResolveToMetadata(string magnetLink)
         {
             return new Metadata(Resolve(magnetLink));
         }
 
-        public static bool IsMagnetLink(String magnetLink)
+        public static bool IsMagnetLink(string magnetLink)
         {
             return magnetLink.StartsWith("magnet:");
         }
 
-        private static bool IsXTValidHash(String xt)
+        private static bool IsXTValidHash(string xt)
         {
             return xt.Length == 49 && xt.StartsWith("urn:btih:");
         }
 
-        private static IEnumerable<KeyValuePair<String, String>> SplitURLIntoParts(String magnetLink)
+        private static IEnumerable<KeyValuePair<string, string>> SplitURLIntoParts(string magnetLink)
         {
-            String[] parts = magnetLink.Split('&');
-            ICollection<KeyValuePair<String, String>> values = new Collection<KeyValuePair<string, string>>();
+            var parts = magnetLink.Split('&');
+            var values = new Collection<KeyValuePair<string, string>>();
 
-            foreach (String str in parts)
+            foreach (var str in parts)
             {
-                String[] kv = str.Split('=');
+                var kv = str.Split('=');
                 values.Add(new KeyValuePair<string, string>(kv[0], Uri.UnescapeDataString(kv[1])));
             }
 

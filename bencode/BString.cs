@@ -34,7 +34,7 @@ using System.IO;
 namespace System.Net.Torrent.BEncode
 {
     /// <summary>
-    /// Represents a String object. It cannot contain a null value.
+    /// Represents a string object. It cannot contain a null value.
     /// </summary>
     public class BString : IEquatable<string>, IEquatable<BString>, IComparable<string>, IComparable<BString>, IBencodingType
     {
@@ -157,12 +157,12 @@ namespace System.Net.Torrent.BEncode
             return Value;
         }
 
-        public static implicit operator BString(String x)
+        public static implicit operator BString(string x)
         {
             return new BString(x);
         }
 
-        public static implicit operator String(BString x)
+        public static implicit operator string(BString x)
         {
             return x.Value;
         }

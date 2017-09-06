@@ -16,7 +16,7 @@ namespace System.Net.Torrent
         private Thread thread;
         private bool _killSwitch;
 
-        public delegate void NewPeerCB(IPAddress address, int port, String infoHash);
+        public delegate void NewPeerCB(IPAddress address, int port, string infoHash);
         public event NewPeerCB NewPeer;
 
         private int ttl = 8;
@@ -50,7 +50,7 @@ namespace System.Net.Torrent
         }
 
         [DebuggerHidden, DebuggerStepThrough]
-        private void ValidateSocket(Socket socket, String name)
+        private void ValidateSocket(Socket socket, string name)
         {
             if (socket == null)
             {
@@ -70,7 +70,7 @@ namespace System.Net.Torrent
 
         public void Open()
         {
-            IPAddress address = IPAddress.Parse(lpdMulticastAddress);
+            var address = IPAddress.Parse(lpdMulticastAddress);
             SetupReaderSocket(address, lpdMulticastPort);
             SetupSenderSocket(address, lpdMulticastPort);
 
@@ -123,30 +123,27 @@ namespace System.Net.Torrent
 
         private void Process()
         {
-            byte[] buffer = new byte[200];
+            var buffer = new byte[200];
             while (!_killSwitch)
             {
                 EndPoint endPoint = new IPEndPoint(0,0);
                 udpReaderSocket.ReceiveFrom(buffer, ref endPoint);
 
-                IPAddress remoteAddress = ((IPEndPoint) endPoint).Address;
-                int remotePort = 0;
-                string remoteHash = "";
+                var remoteAddress = ((IPEndPoint)endPoint).Address;
+                var remotePort = 0;
+                var remoteHash = string.Empty;
 
-                String packet = Encoding.ASCII.GetString(buffer).Trim();
+                var packet = Encoding.ASCII.GetString(buffer).Trim();
 
-                if (!packet.StartsWith("BT-SEARCH"))
-                {
-                    continue;
-                }
+                if (!packet.StartsWith("BT-SEARCH")) continue;
 
-                String[] packetLines = packet.Split('\n');
+                var packetLines = packet.Split('\n');
 
-                foreach (string line in packetLines)
+                foreach (var line in packetLines)
                 {
                     if (line.StartsWith("Port:"))
                     {
-                        string portStr = line.Substring(5).Trim();
+                        var portStr = line.Substring(5).Trim();
                         int.TryParse(portStr, out remotePort);
                     }
                     if (line.StartsWith("Infohash:"))
@@ -155,29 +152,18 @@ namespace System.Net.Torrent
                     }
                 }
 
-                if (!String.IsNullOrEmpty(remoteHash) && remotePort != 0)
+                if (!string.IsNullOrEmpty(remoteHash) && remotePort != 0)
                 {
-                    if (NewPeer != null)
-                    {
-                        NewPeer(remoteAddress, remotePort, remoteHash);
-                    }
+                    NewPeer?.Invoke(remoteAddress, remotePort, remoteHash);
                 }
             }
         }
 
-        public void Announce(int listeningPort, String infoHash)
+        public void Announce(int listeningPort, string infoHash)
         {
-            String message = String.Format("BT-SEARCH * HTTP/1.1\r\n" +
-                                           "Host: {2}:{3}\r\n" +
-                                           "Port: {0}\r\n" +
-                                           "Infohash: {1}\r\n" +
-                                           "\r\n\r\n", 
-                                           listeningPort, 
-                                           infoHash,
-                                           lpdMulticastAddress,
-                                           lpdMulticastPort);
+            var message = $"BT-SEARCH * HTTP/1.1\r\nHost: {lpdMulticastAddress}:{lpdMulticastPort}\r\nPort: {listeningPort}\r\nInfohash: {infoHash}\r\n\r\n\r\n";
 
-            byte[] buffer = Encoding.ASCII.GetBytes(message);
+            var buffer = Encoding.ASCII.GetBytes(message);
 
             udpSenderSocket.Send(buffer);
         }

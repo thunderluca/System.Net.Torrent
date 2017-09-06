@@ -28,6 +28,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 */
 
+using System.Linq;
+
 namespace System.Net.Torrent.Misc
 {
     public static class Unpack
@@ -41,7 +43,7 @@ namespace System.Net.Torrent.Misc
 
         public static Int16 Int16(byte[] bytes, Int32 start, Endianness e = Endianness.Machine)
         {
-            byte[] intBytes = Utils.GetBytes(bytes, start, 2);
+            var intBytes = Utils.GetBytes(bytes, start, 2);
 
             if (NeedsFlipping(e)) Array.Reverse(intBytes);
 
@@ -50,7 +52,7 @@ namespace System.Net.Torrent.Misc
 
         public static Int32 Int32(byte[] bytes, Int32 start, Endianness e = Endianness.Machine)
         {
-            byte[] intBytes = Utils.GetBytes(bytes, start, 4);
+            var intBytes = Utils.GetBytes(bytes, start, 4);
 
             if (NeedsFlipping(e)) Array.Reverse(intBytes);
 
@@ -59,7 +61,7 @@ namespace System.Net.Torrent.Misc
 
         public static Int64 Int64(byte[] bytes, Int32 start, Endianness e = Endianness.Machine)
         {
-            byte[] intBytes = Utils.GetBytes(bytes, start, 8);
+            var intBytes = Utils.GetBytes(bytes, start, 8);
 
             if (NeedsFlipping(e)) Array.Reverse(intBytes);
 
@@ -68,7 +70,7 @@ namespace System.Net.Torrent.Misc
 
         public static UInt16 UInt16(byte[] bytes, Int32 start, Endianness e = Endianness.Machine)
         {
-            byte[] intBytes = Utils.GetBytes(bytes, start, 2);
+            var intBytes = Utils.GetBytes(bytes, start, 2);
 
             if (NeedsFlipping(e)) Array.Reverse(intBytes);
 
@@ -77,7 +79,7 @@ namespace System.Net.Torrent.Misc
 
         public static UInt32 UInt32(byte[] bytes, Int32 start, Endianness e = Endianness.Machine)
         {
-            byte[] intBytes = Utils.GetBytes(bytes, start, 4);
+            var intBytes = Utils.GetBytes(bytes, start, 4);
 
             if (NeedsFlipping(e)) Array.Reverse(intBytes);
 
@@ -86,7 +88,7 @@ namespace System.Net.Torrent.Misc
 
         public static UInt64 UInt64(byte[] bytes, Int32 start, Endianness e = Endianness.Machine)
         {
-            byte[] intBytes = Utils.GetBytes(bytes, start, 8);
+            var intBytes = Utils.GetBytes(bytes, start, 8);
 
             if (NeedsFlipping(e)) Array.Reverse(intBytes);
 
@@ -105,14 +107,9 @@ namespace System.Net.Torrent.Misc
 
             return false;
         }
-        public static String Hex(byte[] bytes, Endianness e = Endianness.Machine)
+        public static string Hex(byte[] bytes, Endianness e = Endianness.Machine)
         {
-            String str = "";
-
-            foreach (byte b in bytes)
-            {
-                str += String.Format("{0:X2}", b);
-            }
+            var str = string.Join(string.Empty, bytes.Select(b => string.Format("{0:X2}", b)));
 
             return str;
         }

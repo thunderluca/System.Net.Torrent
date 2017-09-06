@@ -65,17 +65,17 @@ namespace System.Net.Torrent.IO
 
                 if (_socket.AddressFamily != AddressFamily.InterNetwork)
                 {
-                    throw new ArgumentException("AddressFamily of socket must be InterNetwork");
+                    throw new ArgumentException($"{nameof(AddressFamily)} of socket must be {nameof(AddressFamily.InterNetwork)}");
                 }
 
                 if (_socket.SocketType != SocketType.Stream)
                 {
-                    throw new ArgumentException("SocketType of socket must be Stream");
+                    throw new ArgumentException($"{nameof(SocketType)} of socket must be {nameof(SocketType.Stream)}");
                 }
 
                 if (_socket.ProtocolType != ProtocolType.Tcp)
                 {
-                    throw new ArgumentException("ProtocolType of socket must be Tcp");
+                    throw new ArgumentException($"{nameof(ProtocolType)} of socket must be {nameof(ProtocolType.Tcp)}");
                 }
 
                 _socket.NoDelay = true;

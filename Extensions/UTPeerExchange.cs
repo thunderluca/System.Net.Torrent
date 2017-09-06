@@ -38,17 +38,18 @@ namespace System.Net.Torrent.Extensions
     {
         private ExtendedProtocolExtensions _parent;
 
-        public string Protocol
-        {
-            get { return "ut_pex"; }
-        }
+        private const string ADDED_KEY = "added";
+        private const string ADDED_FLAGS_KEY = "added.f";
+        private const string DROPPED_KEY = "dropped";
+
+        public string Protocol => "ut_pex";
 
         public event Action<IPeerWireClient, IBTExtension, IPEndPoint, byte> Added;
         public event Action<IPeerWireClient, IBTExtension, IPEndPoint> Dropped;
 
         public void Init(ExtendedProtocolExtensions parent)
         {
-            _parent = parent;
+            _parent = parent ?? throw new ArgumentNullException(nameof(parent));
         }
 
         public void Deinit()
@@ -58,47 +59,42 @@ namespace System.Net.Torrent.Extensions
 
         public void OnHandshake(IPeerWireClient peerWireClient, byte[] handshake)
         {
-            BDict d = (BDict)BencodingUtils.Decode(handshake);
+            var dictionary = (BDict)BencodingUtils.Decode(handshake);
         }
 
         public void OnExtendedMessage(IPeerWireClient peerWireClient, byte[] bytes)
         {
-            BDict d = (BDict) BencodingUtils.Decode(bytes);
-            if (d.ContainsKey("added") && d.ContainsKey("added.f"))
+            BDict dictionary = (BDict) BencodingUtils.Decode(bytes);
+            if (!dictionary.ContainsKey(ADDED_KEY) && !dictionary.ContainsKey(ADDED_FLAGS_KEY) && !dictionary.ContainsKey(DROPPED_KEY)) return;
+
+            if (dictionary.ContainsKey(ADDED_KEY) && dictionary.ContainsKey(ADDED_FLAGS_KEY))
             {
-                BString pexList = (BString)d["added"];
-                BString pexFlags = (BString)d["added.f"];
+                var pexList = (BString)dictionary[ADDED_KEY];
+                var pexFlags = (BString)dictionary[ADDED_FLAGS_KEY];
 
                 for (int i = 0; i < pexList.ByteValue.Length/6; i++)
                 {
-                    UInt32 ip = Unpack.UInt32(pexList.ByteValue, i*6, Unpack.Endianness.Little);
-                    UInt16 port = Unpack.UInt16(pexList.ByteValue, (i * 6) + 4, Unpack.Endianness.Big);
-                    byte flags = pexFlags.ByteValue[i];
+                    var ip = Unpack.UInt32(pexList.ByteValue, i*6, Unpack.Endianness.Little);
+                    var port = Unpack.UInt16(pexList.ByteValue, (i * 6) + 4, Unpack.Endianness.Big);
+                    var flags = pexFlags.ByteValue[i];
 
-                    IPEndPoint ipAddr = new IPEndPoint(ip, port);
+                    var ipAddr = new IPEndPoint(ip, port);
 
-                    if (Added != null)
-                    {
-                        Added(peerWireClient, this, ipAddr, flags);
-                    }
+                    Added?.Invoke(peerWireClient, this, ipAddr, flags);
                 }
             }
-
-            if (d.ContainsKey("dropped"))
+            else //if (d.ContainsKey(DROPPED_KEY))
             {
-                BString pexList = (BString)d["dropped"];
+                BString pexList = (BString)dictionary[DROPPED_KEY];
 
                 for (int i = 0; i < pexList.ByteValue.Length / 6; i++)
                 {
-                    UInt32 ip = Unpack.UInt32(pexList.ByteValue, i * 6, Unpack.Endianness.Little);
-                    UInt16 port = Unpack.UInt16(pexList.ByteValue, (i * 6) + 4, Unpack.Endianness.Big);
+                    var ip = Unpack.UInt32(pexList.ByteValue, i * 6, Unpack.Endianness.Little);
+                    var port = Unpack.UInt16(pexList.ByteValue, (i * 6) + 4, Unpack.Endianness.Big);
 
-                    IPEndPoint ipAddr = new IPEndPoint(ip, port);
+                    var ipAddr = new IPEndPoint(ip, port);
 
-                    if (Dropped != null)
-                    {
-                        Dropped(peerWireClient, this, ipAddr);
-                    }
+                    Dropped?.Invoke(peerWireClient, this, ipAddr);
                 }
             }
         }

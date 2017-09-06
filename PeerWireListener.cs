@@ -63,12 +63,9 @@ namespace System.Net.Torrent
 
         private void Callback(IAsyncResult ar)
         {
-            IWireIO s = _socket.EndAccept(ar);
+            var s = _socket.EndAccept(ar);
 
-            if (NewPeer != null)
-            {
-                NewPeer(new PeerWireClient(s));
-            }
+            NewPeer?.Invoke(new PeerWireClient(s));
 
             _socket.BeginAccept(Callback);
         }

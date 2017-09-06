@@ -137,7 +137,7 @@ namespace System.Net.Torrent.BEncode
 
         public override string ToString()
         {
-            return String.Format("{0}", Value);
+            return string.Format("{0}", Value);
         }
 
         public static implicit operator BInt(long x)

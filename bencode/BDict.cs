@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace System.Net.Torrent.BEncode
 {
@@ -49,7 +50,7 @@ namespace System.Net.Torrent.BEncode
             inputStream.ReadByte();
 
             bytesConsumed++;
-            BDict res = new BDict();
+            var dictionary = new BDict();
 
             // Read elements till an 'e'
             while (inputStream.PeekChar() != 'e')
@@ -60,14 +61,14 @@ namespace System.Net.Torrent.BEncode
                 // Value
                 IBencodingType value = BencodingUtils.Decode(inputStream, ref bytesConsumed);
 
-                res[key.Value] = value;
+                dictionary[key.Value] = value;
             }
 
             // Get past 'e'
             inputStream.Read();
             bytesConsumed++;
 
-            return res;
+            return dictionary;
         }
 
         public void Encode(BinaryWriter writer)
@@ -79,7 +80,7 @@ namespace System.Net.Torrent.BEncode
             foreach (KeyValuePair<string, IBencodingType> item in this)
             {
                 // Write key
-                BString key = new BString
+                var key = new BString
                 {
                     Value = item.Key
                 };
@@ -109,24 +110,11 @@ namespace System.Net.Torrent.BEncode
             if (other.Count != Count)
                 return false;
 
-            foreach (string key in Keys)
-            {
-                if (!other.ContainsKey(key))
-                    return false;
-
-                // Dictionaries cannot have nulls
-                if (!other[key].Equals(this[key]))
-                {
-                    // Not ok
-                    return false;
-                }
-            }
-
-            return true;
+            return !Keys.Any(key => !other.ContainsKey(key) || !other[key].Equals(this[key]));
         }
         public override bool Equals(object obj)
         {
-            BDict other = obj as BDict;
+            var other = obj as BDict;
 
             return Equals(other);
         }
@@ -141,7 +129,7 @@ namespace System.Net.Torrent.BEncode
         public new void Add(string key, IBencodingType value)
         {
             if (value == null)
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
 
             base.Add(key, value);
         }
@@ -158,17 +146,14 @@ namespace System.Net.Torrent.BEncode
             get { return base[index]; }
             set
             {
-                if (value == null)
-                    throw new ArgumentNullException("value");
-
-                base[index] = value;
+                base[index] = value ?? throw new ArgumentNullException(nameof(value));
             }
         }
 
         public override int GetHashCode()
         {
             int r = 1;
-            foreach (KeyValuePair<String, IBencodingType> pair in this)
+            foreach (KeyValuePair<string, IBencodingType> pair in this)
             {
                 r ^= pair.GetHashCode();
             }

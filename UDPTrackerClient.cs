@@ -47,35 +47,35 @@ namespace System.Net.Torrent
             _currentConnectionId = BaseCurrentConnectionId;
         }
 
-        public IDictionary<String, ScrapeInfo> Scrape(String url, String[] hashes)
+        public IDictionary<string, ScrapeInfo> Scrape(string url, string[] hashes)
         {
-            Dictionary<String, ScrapeInfo> returnVal = new Dictionary<string, ScrapeInfo>();
+            var returnVal = new Dictionary<string, ScrapeInfo>();
 
             ValidateInput(url, hashes, ScraperType.UDP);
 
-            Int32 trasactionId = Random.Next(0, 65535);
+            var trasactionId = Random.Next(0, 65535);
 
-            UdpClient udpClient = new UdpClient(Tracker, Port)
+            var udpClient = new UdpClient(Tracker, Port)
+            {
+                Client =
                 {
-                    Client =
-                        {
-                            SendTimeout = Timeout*1000, 
-                            ReceiveTimeout = Timeout*1000
-                        }
-                };
+                    SendTimeout = Timeout*1000,
+                    ReceiveTimeout = Timeout*1000
+                }
+            };
 
-            byte[] sendBuf = _currentConnectionId.Concat(Pack.Int32(0)).Concat(Pack.Int32(trasactionId)).ToArray();
+            var sendBuf = _currentConnectionId.Concat(Pack.Int32(0)).Concat(Pack.Int32(trasactionId)).ToArray();
             udpClient.Send(sendBuf, sendBuf.Length);
 
             IPEndPoint endPoint = null;
-            byte[] recBuf = udpClient.Receive(ref endPoint);
+            var recBuf = udpClient.Receive(ref endPoint);
 
             if(recBuf == null) throw new NoNullAllowedException("udpClient failed to receive");
             if(recBuf.Length < 0) throw new InvalidOperationException("udpClient received no response");
             if(recBuf.Length < 16) throw new InvalidOperationException("udpClient did not receive entire response");
 
-            UInt32 recAction = Unpack.UInt32(recBuf, 0, Unpack.Endianness.Big);
-            UInt32 recTrasactionId = Unpack.UInt32(recBuf, 4, Unpack.Endianness.Big);
+            var recAction = Unpack.UInt32(recBuf, 0, Unpack.Endianness.Big);
+            var recTrasactionId = Unpack.UInt32(recBuf, 4, Unpack.Endianness.Big);
 
             if (recAction != 0 || recTrasactionId != trasactionId)
             {
@@ -84,10 +84,10 @@ namespace System.Net.Torrent
 
             _currentConnectionId = CopyBytes(recBuf, 8, 8);
 
-            byte[] hashBytes = new byte[0];
+            var hashBytes = new byte[0];
             hashBytes = hashes.Aggregate(hashBytes, (current, hash) => current.Concat(Pack.Hex(hash)).ToArray());
 
-            int expectedLength = 8 + (12 * hashes.Length);
+            var expectedLength = 8 + (12 * hashes.Length);
 
             sendBuf = _currentConnectionId.Concat(Pack.Int32(2)).Concat(Pack.Int32(trasactionId)).Concat(hashBytes).ToArray();
             udpClient.Send(sendBuf, sendBuf.Length);
@@ -108,12 +108,12 @@ namespace System.Net.Torrent
                 throw new Exception("Invalid response from tracker");
             }
 
-            Int32 startIndex = 8;
-            foreach (String hash in hashes)
+            var startIndex = 8;
+            foreach (var hash in hashes)
             {
-                UInt32 seeders = Unpack.UInt32(recBuf, startIndex, Unpack.Endianness.Big);
-                UInt32 completed = Unpack.UInt32(recBuf, startIndex + 4, Unpack.Endianness.Big);
-                UInt32 leachers = Unpack.UInt32(recBuf, startIndex + 8, Unpack.Endianness.Big);
+                var seeders = Unpack.UInt32(recBuf, startIndex, Unpack.Endianness.Big);
+                var completed = Unpack.UInt32(recBuf, startIndex + 4, Unpack.Endianness.Big);
+                var leachers = Unpack.UInt32(recBuf, startIndex + 8, Unpack.Endianness.Big);
 
                 returnVal.Add(hash, new ScrapeInfo(seeders, completed, leachers, ScraperType.UDP));
 
@@ -125,32 +125,32 @@ namespace System.Net.Torrent
             return returnVal;
         }
 
-        public AnnounceInfo Announce(String url, String hash, String peerId)
+        public AnnounceInfo Announce(string url, string hash, string peerId)
         {
             return Announce(url, hash, peerId, 0, 0, 0, 2, 0, -1, 12345, 0);
         }
 
-        public AnnounceInfo Announce(String url, String hash, String peerId, Int64 bytesDownloaded, Int64 bytesLeft, Int64 bytesUploaded, 
+        public AnnounceInfo Announce(string url, string hash, string peerId, Int64 bytesDownloaded, Int64 bytesLeft, Int64 bytesUploaded, 
             Int32 eventTypeFilter, Int32 ipAddress, Int32 numWant, Int32 listenPort, Int32 extensions)
         {
-            List<IPEndPoint> returnValue = new List<IPEndPoint>();
+            var returnValue = new List<IPEndPoint>();
 
             ValidateInput(url, new[] { hash }, ScraperType.UDP);
 
             _currentConnectionId = BaseCurrentConnectionId;
-            Int32 trasactionId = Random.Next(0, 65535);
+            var trasactionId = Random.Next(0, 65535);
 
-            UdpClient udpClient = new UdpClient(Tracker, Port)
+            var udpClient = new UdpClient(Tracker, Port)
+            {
+                DontFragment = true,
+                Client =
                 {
-                    DontFragment = true,
-                    Client =
-                        {
-                            SendTimeout = Timeout*1000,
-                            ReceiveTimeout = Timeout*1000
-                        }
-                };
+                    SendTimeout = Timeout*1000,
+                    ReceiveTimeout = Timeout*1000
+                }
+            };
 
-            byte[] sendBuf = _currentConnectionId.Concat(Pack.Int32(0, Pack.Endianness.Big)).Concat(Pack.Int32(trasactionId, Pack.Endianness.Big)).ToArray();
+            var sendBuf = _currentConnectionId.Concat(Pack.Int32(0, Pack.Endianness.Big)).Concat(Pack.Int32(trasactionId, Pack.Endianness.Big)).ToArray();
             udpClient.Send(sendBuf, sendBuf.Length);
 
             IPEndPoint endPoint = null;
@@ -169,8 +169,8 @@ namespace System.Net.Torrent
             if (recBuf.Length < 0) throw new InvalidOperationException("udpClient received no response");
             if (recBuf.Length < 16) throw new InvalidOperationException("udpClient did not receive entire response");
 
-            UInt32 recAction = Unpack.UInt32(recBuf, 0, Unpack.Endianness.Big);
-            UInt32 recTrasactionId = Unpack.UInt32(recBuf, 4, Unpack.Endianness.Big);
+            var recAction = Unpack.UInt32(recBuf, 0, Unpack.Endianness.Big);
+            var recTrasactionId = Unpack.UInt32(recBuf, 4, Unpack.Endianness.Big);
 
             if (recAction != 0 || recTrasactionId != trasactionId)
             {
@@ -179,9 +179,9 @@ namespace System.Net.Torrent
 
             _currentConnectionId = CopyBytes(recBuf, 8, 8);
 
-            byte[] hashBytes = Pack.Hex(hash).ToArray();
+            var hashBytes = Pack.Hex(hash).ToArray();
 
-            Int32 key = Random.Next(0, 65535);
+            var key = Random.Next(0, 65535);
 
             sendBuf = _currentConnectionId. /*connection id*/
                 Concat(Pack.Int32(1)). /*action*/
@@ -211,19 +211,19 @@ namespace System.Net.Torrent
             recAction = Unpack.UInt32(recBuf, 0, Unpack.Endianness.Big);
             recTrasactionId = Unpack.UInt32(recBuf, 4, Unpack.Endianness.Big);
 
-            int waitTime = (int)Unpack.UInt32(recBuf, 8, Unpack.Endianness.Big);
-            int leachers = (int)Unpack.UInt32(recBuf, 12, Unpack.Endianness.Big);
-            int seeders = (int)Unpack.UInt32(recBuf, 16, Unpack.Endianness.Big);
+            var waitTime = (int)Unpack.UInt32(recBuf, 8, Unpack.Endianness.Big);
+            var leachers = (int)Unpack.UInt32(recBuf, 12, Unpack.Endianness.Big);
+            var seeders = (int)Unpack.UInt32(recBuf, 16, Unpack.Endianness.Big);
 
             if (recAction != 1 || recTrasactionId != trasactionId)
             {
                 throw new Exception("Invalid response from tracker");
             }
 
-            for (Int32 i = 20; i < recBuf.Length; i += 6)
+            for (var i = 20; i < recBuf.Length; i += 6)
             {
-                UInt32 ip = Unpack.UInt32(recBuf, i, Unpack.Endianness.Big);
-                UInt16 port = Unpack.UInt16(recBuf, i + 4, Unpack.Endianness.Big);
+                var ip = Unpack.UInt32(recBuf, i, Unpack.Endianness.Big);
+                var port = Unpack.UInt16(recBuf, i + 4, Unpack.Endianness.Big);
 
                 returnValue.Add(new IPEndPoint(ip, port));
             }
@@ -233,19 +233,19 @@ namespace System.Net.Torrent
             return new AnnounceInfo(returnValue, waitTime, seeders, leachers);
         }
 
-        public IDictionary<String, AnnounceInfo> Announce(String url, String[] hashes, String peerId)
+        public IDictionary<string, AnnounceInfo> Announce(string url, string[] hashes, string peerId)
         {
             ValidateInput(url, hashes, ScraperType.UDP);
 
-            Dictionary<String, AnnounceInfo> returnVal = hashes.ToDictionary(hash => hash, hash => Announce(url, hash, peerId));
+            var returnVal = hashes.ToDictionary(hash => hash, hash => Announce(url, hash, peerId));
 
             return returnVal;
         }
 
         private static byte[] CopyBytes(byte[] bytes, Int32 start, Int32 length)
         {
-            byte[] intBytes = new byte[length];
-            for (int i = 0; i < length; i++) intBytes[i] = bytes[start + i];
+            var intBytes = new byte[length];
+            for (var i = 0; i < length; i++) intBytes[i] = bytes[start + i];
             return intBytes;
         }
     }

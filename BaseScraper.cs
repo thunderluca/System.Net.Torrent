@@ -42,7 +42,7 @@ namespace System.Net.Torrent
         protected readonly Random Random = new Random(DateTime.Now.Second);
 
         public Int32 Timeout { get; private set; }
-        public String Tracker { get; private set; }
+        public string Tracker { get; private set; }
         public Int32 Port { get; private set; }
 
         protected BaseScraper(Int32 timeout)
@@ -56,33 +56,36 @@ namespace System.Net.Torrent
             HTTP
         }
 
-        protected void ValidateInput(String url, String[] hashes, ScraperType type)
+        private const int MINIMUM_HASH_LENGTH = 1;
+        private const int MAXIMUM_HASH_LENGTH = 1;
+
+        protected void ValidateInput(string url, string[] hashes, ScraperType type)
         {
-            if (hashes.Length < 1)
+            if (hashes.Length < MINIMUM_HASH_LENGTH)
             {
-                throw new ArgumentOutOfRangeException("hashes", hashes, "Must have at least one hash when calling scrape");
+                throw new ArgumentOutOfRangeException(nameof(hashes), hashes, $"Must have at least {MINIMUM_HASH_LENGTH} hash when calling scrape");
             }
 
-            if (hashes.Length > 74)
+            if (hashes.Length > MAXIMUM_HASH_LENGTH)
             {
-                throw new ArgumentOutOfRangeException("hashes", hashes, "Must have a maximum of 74 hashes when calling scrape");
+                throw new ArgumentOutOfRangeException(nameof(hashes), hashes, $"Must have a maximum of {MAXIMUM_HASH_LENGTH} hashes when calling scrape");
             }
-
-            foreach (String hash in hashes)
+            
+            foreach (var hash in hashes)
             {
                 if (!HashRegex.IsMatch(hash))
                 {
-                    throw new ArgumentOutOfRangeException("hashes", hash, "Hash is not valid");
+                    throw new ArgumentOutOfRangeException(nameof(hashes), hash, "Hash is not valid");
                 }
             }
 
             if (type == ScraperType.UDP)
             {
-                Match match = UDPRegex.Match(url);
+                var match = UDPRegex.Match(url);
 
                 if (!match.Success)
                 {
-                    throw new ArgumentOutOfRangeException("url", url, "URL is not a valid UDP tracker address");
+                    throw new ArgumentOutOfRangeException(nameof(url), url, "URL is not a valid UDP tracker address");
                 }
 
                 Tracker = match.Groups[1].Value;
@@ -90,11 +93,11 @@ namespace System.Net.Torrent
             }
             else if (type == ScraperType.HTTP)
             {
-                Match match = HTTPRegex.Match(url);
+                var match = HTTPRegex.Match(url);
 
                 if (!match.Success)
                 {
-                    throw new ArgumentOutOfRangeException("url", url, "URL is not a valid HTTP tracker address");
+                    throw new ArgumentOutOfRangeException(nameof(url), url, "URL is not a valid HTTP tracker address");
                 }
 
                 Tracker = match.Groups[0].Value;

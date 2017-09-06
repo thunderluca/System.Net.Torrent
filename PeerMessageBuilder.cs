@@ -68,7 +68,7 @@ namespace System.Net.Torrent
             return this;
         }
 
-        public PeerMessageBuilder Add(String str)
+        public PeerMessageBuilder Add(string str)
         {
             MessagePayload.AddRange(Pack.Hex(str));
 
@@ -77,8 +77,8 @@ namespace System.Net.Torrent
 
         public byte[] Message()
         {
-            byte[] messageBytes = new byte[PacketLength];
-            byte[] lengthBytes = Pack.UInt32(MessageLength, Pack.Endianness.Big);
+            var messageBytes = new byte[PacketLength];
+            var lengthBytes = Pack.UInt32(MessageLength, Pack.Endianness.Big);
 
             lengthBytes.CopyTo(messageBytes, 0);
 

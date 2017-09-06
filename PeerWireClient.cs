@@ -62,9 +62,9 @@ namespace System.Net.Torrent
         public bool KeepConnectionAlive { get; set; }
         
         public bool RemoteUsesDHT { get; private set; }
-        public String LocalPeerID { get; set; }
-        public String RemotePeerID { get; private set; }
-        public String Hash { get; set; }
+        public string LocalPeerID { get; set; }
+        public string RemotePeerID { get; private set; }
+        public string Hash { get; set; }
 
         public event Action<IPeerWireClient> DroppedConnection;
         public event Action<IPeerWireClient> NoData;
@@ -95,7 +95,7 @@ namespace System.Net.Torrent
             Socket.Connect(endPoint);
         }
 
-        public void Connect(String ipHost, Int32 port)
+        public void Connect(string ipHost, Int32 port)
         {
             Socket.Connect(new IPEndPoint(IPAddress.Parse(ipHost), port));
         }
@@ -115,7 +115,7 @@ namespace System.Net.Torrent
             return Handshake(Pack.Hex(Hash), Encoding.ASCII.GetBytes(LocalPeerID));
         }
 
-        public bool Handshake(String hash, String peerId)
+        public bool Handshake(string hash, string peerId)
         {
             LocalPeerID = peerId;
             Hash = hash;
@@ -125,27 +125,27 @@ namespace System.Net.Torrent
 
         public bool Handshake(byte[] hash, byte[] peerId)
         {
-            if (hash == null) throw new ArgumentNullException("hash", "Hash cannot be null");
-            if (peerId == null) throw new ArgumentNullException("peerId", "Peer ID cannot be null");
+            if (hash == null) throw new ArgumentNullException(nameof(hash), "Hash cannot be null");
+            if (peerId == null) throw new ArgumentNullException(nameof(peerId), "Peer ID cannot be null");
 
-            if (hash.Length != 20) throw new ArgumentOutOfRangeException("hash", "hash must be 20 bytes exactly");
-            if (peerId.Length != 20) throw new ArgumentOutOfRangeException("peerId", "Peer ID must be 20 bytes exactly");
+            if (hash.Length != 20) throw new ArgumentOutOfRangeException(nameof(hash), "hash must be 20 bytes exactly");
+            if (peerId.Length != 20) throw new ArgumentOutOfRangeException(nameof(peerId), "Peer ID must be 20 bytes exactly");
 
             byte[] reservedBytes = {0, 0, 0, 0, 0, 0, 0, 0};
 
-            foreach (IProtocolExtension extension in _btProtocolExtensions)
+            foreach (var extension in _btProtocolExtensions)
             {
-                for (int x = 0; x < 8; x++)
+                for (var x = 0; x < 8; x++)
                 {
                     reservedBytes[x] |= extension.ByteMask[x];
                 }
             }
 
-            byte[] sendBuf = (new[] { (byte)_bitTorrentProtocolHeader.Length }).Cat(_bitTorrentProtocolHeader).Cat(reservedBytes).Cat(hash).Cat(peerId);
+            var sendBuf = (new[] { (byte)_bitTorrentProtocolHeader.Length }).Cat(_bitTorrentProtocolHeader).Cat(reservedBytes).Cat(hash).Cat(peerId);
 
             try
             {
-				int len = Socket.Send(sendBuf);
+				var len = Socket.Send(sendBuf);
 	            if (len != sendBuf.Length)
 	            {
 		            throw new Exception("Didnt sent entire handshake");
@@ -173,7 +173,7 @@ namespace System.Net.Torrent
 
             (new Thread(o =>
             {
-                PeerWireClient client = (PeerWireClient) o;
+                var client = (PeerWireClient) o;
                 while (client.Process() && _asyncContinue)
                 {
                     Thread.Sleep(10);
@@ -188,7 +188,7 @@ namespace System.Net.Torrent
 
         public bool Process()
         {
-            bool returnVal = _process();
+            var returnVal = _process();
 
             if (returnVal) return true;
 
@@ -197,10 +197,7 @@ namespace System.Net.Torrent
                 Socket.Disconnect();
             }
 
-            if (DroppedConnection != null)
-            {
-                DroppedConnection(this);
-            }
+            DroppedConnection?.Invoke(this);
 
             return false;
         }
@@ -209,7 +206,7 @@ namespace System.Net.Torrent
         {
             if (!_receiving)
             {
-                byte[] recBuffer = new byte[_dynamicBufferSize];
+                var recBuffer = new byte[_dynamicBufferSize];
                 try
                 {
                     _async = Socket.BeginReceive(recBuffer, 0, _dynamicBufferSize, OnReceived, recBuffer);
@@ -248,17 +245,17 @@ namespace System.Net.Torrent
 
                 _handshakeComplete = true;
 
-                byte[] recReserved = _internalBuffer.GetBytes(20, 8);
+                var recReserved = _internalBuffer.GetBytes(20, 8);
                 RemoteUsesDHT = (recReserved[7] & 0x1) == 0x1;
 
-                byte[] remoteHashBytes = _internalBuffer.GetBytes(28, 20);
-                if (String.IsNullOrEmpty(Hash))
+                var remoteHashBytes = _internalBuffer.GetBytes(28, 20);
+                if (string.IsNullOrEmpty(Hash))
                 {
-                    String remoteHash = Unpack.Hex(remoteHashBytes);
+                    var remoteHash = Unpack.Hex(remoteHashBytes);
                     Hash = remoteHash;
                 }
 
-                byte[] remoteIdbytes = _internalBuffer.GetBytes(48, 20);
+                var remoteIdbytes = _internalBuffer.GetBytes(48, 20);
 
                 RemotePeerID = Encoding.ASCII.GetString(remoteIdbytes);
 
@@ -277,7 +274,7 @@ namespace System.Net.Torrent
                 return true;
             }
 
-            Int32 commandLength = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
+            var commandLength = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
 
             if (commandLength > (_internalBuffer.Length - 4))
             {
@@ -347,7 +344,7 @@ namespace System.Net.Torrent
                     break;
                 default:
 	            {
-		            foreach (IProtocolExtension extension in _btProtocolExtensions)
+		            foreach (var extension in _btProtocolExtensions)
                     {
 	                    if (!extension.CommandIDs.Contains(b => b == commandId))
 	                    {
@@ -375,9 +372,9 @@ namespace System.Net.Torrent
         {
             if (Socket == null) return;
 
-            byte[] data = (byte[])ar.AsyncState;
+            var data = (byte[])ar.AsyncState;
 
-            Int32 len = Socket.EndReceive(ar);
+            var len = Socket.EndReceive(ar);
 
             _async = null;
 
@@ -404,42 +401,42 @@ namespace System.Net.Torrent
 
         public bool SendKeepAlive()
         {
-            int sent = Socket.Send(Pack.Int32(0));
+            var sent = Socket.Send(Pack.Int32(0));
 
             return sent == 4;
         }
 
         public bool SendChoke()
         {
-            int sent = Socket.Send(new PeerMessageBuilder(0).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(0).Message());
 
             return sent == 5;
         }
 
         public bool SendUnChoke()
         {
-            int sent = Socket.Send(new PeerMessageBuilder(1).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(1).Message());
 
             return sent == 5;
         }
 
         public bool SendInterested()
         {
-            int sent = Socket.Send(new PeerMessageBuilder(2).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(2).Message());
 
             return sent == 5;
         }
 
         public bool SendNotInterested()
         {
-            int sent = Socket.Send(new PeerMessageBuilder(3).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(3).Message());
 
             return sent == 5;
         }
 
         public bool SendHave(UInt32 index)
         {
-            int sent = Socket.Send(new PeerMessageBuilder(4).Add(index).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(4).Add(index).Message());
 
             return sent == 9;
         }
@@ -451,18 +448,18 @@ namespace System.Net.Torrent
 
         public bool SendBitField(bool[] bitField, bool obsf)
         {
-            UInt32[] obsfIDs = new UInt32[0];
+            var obsfIDs = new UInt32[0];
 
             if (obsf && bitField.Length > 32)
             {
-                Random rand = new Random();
-                UInt32 obsfCount = (UInt32)Math.Min(16, bitField.Length / 16);
+                var rand = new Random();
+                var obsfCount = (UInt32)Math.Min(16, bitField.Length / 16);
                 UInt32 distObsf = 0;
                 obsfIDs = new UInt32[obsfCount];
 
                 while (distObsf < obsfCount)
                 {
-                    UInt32 piece = (UInt32)rand.Next(0, bitField.Length);
+                    var piece = (UInt32)rand.Next(0, bitField.Length);
                     if (obsfIDs.Contains(piece)) continue;
 
                     obsfIDs[distObsf] = piece;
@@ -470,14 +467,14 @@ namespace System.Net.Torrent
                 }
             }
 
-            byte[] bytes = new byte[bitField.Length / 8];
+            var bytes = new byte[bitField.Length / 8];
 
             for (UInt32 i = 0; i < bitField.Length; i++)
             {
                 if (obsfIDs.Contains(i)) continue;
 
-                int x = (int)Math.Floor((double)i/8);
-                ushort p = (ushort) (i%8);
+                var x = (int)Math.Floor((double)i/8);
+                var p = (ushort) (i%8);
 
                 if (bitField[i])
                 {
@@ -485,11 +482,11 @@ namespace System.Net.Torrent
                 }
             }
 
-            int sent = Socket.Send(new PeerMessageBuilder(5).Add(bytes).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(5).Add(bytes).Message());
 
             if (obsfIDs.Length > 0)
             {
-                foreach (UInt32 obsfID in obsfIDs)
+                foreach (var obsfID in obsfIDs)
                 {
                     SendHave(obsfID);
                 }
@@ -500,28 +497,28 @@ namespace System.Net.Torrent
 
         public bool SendRequest(UInt32 index, UInt32 start, UInt32 length)
         {
-            int sent = Socket.Send(new PeerMessageBuilder(6).Add(index).Add(start).Add(length).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(6).Add(index).Add(start).Add(length).Message());
 
             return sent == 17;
         }
 
         public bool SendPiece(UInt32 index, UInt32 start, byte[] data)
         {
-            int sent = Socket.Send(new PeerMessageBuilder(7).Add(index).Add(start).Add(data).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(7).Add(index).Add(start).Add(data).Message());
 
             return (sent == 13 + data.Length);
         }
 
         public bool SendCancel(UInt32 index, UInt32 start, UInt32 length)
         {
-            int sent = Socket.Send(new PeerMessageBuilder(8).Add(index).Add(start).Add(length).Message());
+            var sent = Socket.Send(new PeerMessageBuilder(8).Add(index).Add(start).Add(length).Message());
 
             return sent == 13;
         }
 
         public bool SendBytes(byte[] bytes)
         {
-            int sent = Socket.Send(bytes);
+            var sent = Socket.Send(bytes);
 
             return sent == bytes.Length;
         }
@@ -529,7 +526,7 @@ namespace System.Net.Torrent
         #region Processors
         private void ProcessHave()
         {
-            Int32 pieceIndex = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
+            var pieceIndex = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
 
             lock (_locker)
             {
@@ -550,9 +547,9 @@ namespace System.Net.Torrent
             }
 
             PeerBitField = new bool[length * 8];
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
-                byte b = _internalBuffer[0];
+                var b = _internalBuffer[0];
 
                 PeerBitField[(i * 8) + 0] = b.GetBit(0);
                 PeerBitField[(i * 8) + 1] = b.GetBit(1);
@@ -575,9 +572,9 @@ namespace System.Net.Torrent
 
         private void ProcessRequest(bool cancel)
         {
-            Int32 index = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
-            Int32 begin = Unpack.Int32(_internalBuffer, 4, Unpack.Endianness.Big);
-            Int32 length = Unpack.Int32(_internalBuffer, 8, Unpack.Endianness.Big);
+            var index = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
+            var begin = Unpack.Int32(_internalBuffer, 4, Unpack.Endianness.Big);
+            var length = Unpack.Int32(_internalBuffer, 8, Unpack.Endianness.Big);
 
             lock (_locker)
             {
@@ -596,8 +593,8 @@ namespace System.Net.Torrent
 
         private void ProcessPiece(Int32 length)
         {
-            Int32 index = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
-            Int32 begin = Unpack.Int32(_internalBuffer, 4, Unpack.Endianness.Big);
+            var index = Unpack.Int32(_internalBuffer, 0, Unpack.Endianness.Big);
+            var begin = Unpack.Int32(_internalBuffer, 4, Unpack.Endianness.Big);
 
             lock (_locker)
             {
@@ -619,98 +616,62 @@ namespace System.Net.Torrent
 
         private void OnNoData()
         {
-            if (NoData != null)
-            {
-                NoData(this);
-            }
+            NoData?.Invoke(this);
         }
 
         private void OnHandshake()
         {
-            if (HandshakeComplete != null)
-            {
-                HandshakeComplete(this);
-            }
+            HandshakeComplete?.Invoke(this);
         }
 
         private void OnKeepAlive()
         {
-            if (KeepAlive != null)
-            {
-                KeepAlive(this);
-            }
+            KeepAlive?.Invoke(this);
         }
 
         private void OnChoke()
         {
-            if (Choke != null)
-            {
-                Choke(this);
-            }
+            Choke?.Invoke(this);
         }
 
         private void OnUnChoke()
         {
-            if (UnChoke != null)
-            {
-                UnChoke(this);
-            }
+            UnChoke?.Invoke(this);
         }
 
         private void OnInterested()
         {
-            if (Interested != null)
-            {
-                Interested(this);
-            }
+            Interested?.Invoke(this);
         }
 
         private void OnNotInterested()
         {
-            if (NotInterested != null)
-            {
-                NotInterested(this);
-            }
+            NotInterested?.Invoke(this);
         }
 
         private void OnHave(Int32 pieceIndex)
         {
-            if (Have != null)
-            {
-                Have(this, pieceIndex);
-            }
+            Have?.Invoke(this, pieceIndex);
         }
 
         private void OnBitField(Int32 size, bool[] bitField)
         {
-            if (BitField != null)
-            {
-                BitField(this, size, bitField);
-            }
+            BitField?.Invoke(this, size, bitField);
         }
 
         private void OnRequest(Int32 index, Int32 begin, Int32 length)
         {
-            if (Request != null)
-            {
-                Request(this, index, begin, length);
-            }
+            Request?.Invoke(this, index, begin, length);
         }
 
         private void OnPiece(Int32 index, Int32 begin, byte[] bytes)
         {
-            if (Piece != null)
-            {
-                Piece(this, index, begin, bytes);
-            }
+            Piece?.Invoke(this, index, begin, bytes);
         }
 
         private void OnCancel(Int32 index, Int32 begin, Int32 length)
         {
-            if (Cancel != null)
-            {
-                Cancel(this, index, begin, length);
-            }
+            Cancel?.Invoke(this, index, begin, length);
         }
 
         #endregion
